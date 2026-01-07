@@ -1,5 +1,6 @@
 use chrono::prelude::*;
 use eframe::egui;
+mod weather;
 
 struct MyApp {
     localtime: DateTime<Local>,
