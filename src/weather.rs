@@ -92,12 +92,12 @@ impl Weather {
     }
 }
 
-pub async fn get_weather() -> Result<Weather, Box<dyn std::error::Error>> {
+pub async fn get_weather() -> Result<Weather, Box<dyn std::error::Error + Send + Sync>> {
     let response = fetch_weather().await?;
     Ok(Weather::parse_weather(response))
 }
 
-pub async fn fetch_weather() -> Result<WeatherReaponse, Box<dyn std::error::Error>> {
+pub async fn fetch_weather() -> Result<WeatherReaponse, Box<dyn std::error::Error + Send + Sync>> {
     dotenv().ok();
 
     let api_key = env::var("WEATHERAPI_KEY")?;
