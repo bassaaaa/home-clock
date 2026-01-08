@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(cargo check:*)",
-      "Bash(cargo build:*)"
+      "Bash(cargo build:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd: MyAppに天気情報を保持し、バックグラウンドで定期取得する機能を追加\n\n- MyAppにweatherフィールドとweather_receiverを追加\n- tokio::spawnで10分ごとに天気を取得するバックグラウンドタスクを実装\n- main関数を#[tokio::main]に変更してtokioランタイムと統合\n- エラー型をSend + Syncに変更してスレッド間で安全に送信可能に\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }
