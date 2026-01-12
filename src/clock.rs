@@ -84,7 +84,7 @@ pub fn draw_time(fb: &mut FrameBuffer, hour: u8, minute: u8, blink: bool) {
     let spacing = pixel_size;
 
     // HH:MM の全体幅を計算
-    let total_width = digit_width * 4 + colon_width * 1 + spacing * 4;
+    let total_width = digit_width * 4 + colon_width + spacing * 4;
     let start_x = (800 - total_width) / 2;
     let start_y = 120;
 

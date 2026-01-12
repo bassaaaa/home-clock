@@ -244,7 +244,7 @@ pub fn draw_colon(
             if (bits >> (1 - col)) & 1 == 1 {
                 draw_pixel_block(
                     fb,
-                    x + (col as i32) * pixel_size,
+                    x + col * pixel_size,
                     y + (row as i32) * pixel_size,
                     pixel_size,
                     color,
