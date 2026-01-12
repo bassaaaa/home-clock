@@ -22,18 +22,25 @@ fn main() {
     let rt = tokio::runtime::Runtime::new().unwrap();
 
     let mut fb = FrameBuffer::new(WINDOW_WIDTH, WINDOW_HEIGHT);
-    let mut window = Window::new("Home Clock", WINDOW_WIDTH, WINDOW_HEIGHT, WindowOptions::default())
-        .expect("ウィンドウの作成に失敗しました");
+    let mut window = Window::new(
+        "Home Clock",
+        WINDOW_WIDTH,
+        WINDOW_HEIGHT,
+        WindowOptions::default(),
+    )
+    .expect("ウィンドウの作成に失敗しました");
 
     window.set_target_fps(30);
 
     // 天気データを保持
     let weather_data: Arc<Mutex<Option<Weather>>> = Arc::new(Mutex::new(None));
-    let mut last_weather_fetch = Instant::now() - Duration::from_secs(600);
+    let mut last_weather_fetch = Instant::now();
+    let mut first_run = true;
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
-        // 10分ごとに天気を取得
-        if last_weather_fetch.elapsed() > Duration::from_secs(600) {
+        // 起動時と10分ごとに天気を取得
+        if first_run || last_weather_fetch.elapsed() > Duration::from_secs(600) {
+            first_run = false;
             let weather_clone = Arc::clone(&weather_data);
             rt.spawn(async move {
                 if let Ok(weather) = get_weather().await {

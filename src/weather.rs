@@ -131,6 +131,7 @@ pub enum WeatherIconType {
     Moon,
     Cloud,
     Rain,
+    HeavyRain,
     Snow,
     Thunder,
 }
@@ -138,6 +139,7 @@ pub enum WeatherIconType {
 // 天気コードからアイコンを取得
 pub fn get_weather_icon(code: u16, is_day: bool) -> WeatherIconType {
     match code {
+        // 晴れ
         1000 => {
             if is_day {
                 WeatherIconType::Sun
@@ -145,135 +147,31 @@ pub fn get_weather_icon(code: u16, is_day: bool) -> WeatherIconType {
                 WeatherIconType::Moon
             }
         }
+        // 曇り、霧（晴れ時々曇りも含む）
         1003 | 1006 | 1009 | 1030 | 1135 | 1147 => WeatherIconType::Cloud,
-        1063 | 1072 | 1150 | 1153 | 1168 | 1171 | 1180 | 1183 | 1186 | 1189 | 1192 | 1195
-        | 1198 | 1201 | 1240 | 1243 | 1246 => WeatherIconType::Rain,
+        // 小雨〜並の雨
+        1063 | 1072 | 1150 | 1153 | 1168 | 1180 | 1183 | 1186 | 1189 | 1198 | 1240 => {
+            WeatherIconType::Rain
+        }
+        // 大雨、激しい雨
+        1171 | 1192 | 1195 | 1201 | 1243 | 1246 => WeatherIconType::HeavyRain,
+        // 雪、みぞれ、あられ
         1066 | 1069 | 1114 | 1117 | 1204 | 1207 | 1210 | 1213 | 1216 | 1219 | 1222 | 1225
         | 1237 | 1249 | 1252 | 1255 | 1258 | 1261 | 1264 => WeatherIconType::Snow,
+        // 雷
         1087 | 1273 | 1276 | 1279 | 1282 => WeatherIconType::Thunder,
         _ => WeatherIconType::Cloud,
     }
 }
 
-// 16x16 太陽アイコン
-const ICON_SUN: [u16; 16] = [
-    0b0000000100000000,
-    0b0000000100000000,
-    0b0010000100001000,
-    0b0001000000010000,
-    0b0000011111100000,
-    0b0000111111110000,
-    0b0000111111110000,
-    0b0100111111110010,
-    0b0000111111110000,
-    0b0000111111110000,
-    0b0000011111100000,
-    0b0001000000010000,
-    0b0010000100001000,
-    0b0000000100000000,
-    0b0000000100000000,
-    0b0000000000000000,
-];
-
-// 16x16 月アイコン
-const ICON_MOON: [u16; 16] = [
-    0b0000000110000000,
-    0b0000011100000000,
-    0b0001100100000000,
-    0b0010001000000000,
-    0b0100001000000000,
-    0b0100001000000000,
-    0b1000001000000000,
-    0b1000000100000000,
-    0b1000000100000000,
-    0b1000000010000000,
-    0b1000000001000001,
-    0b0100000000111110,
-    0b0100000000000010,
-    0b0010000000000100,
-    0b0001100000011000,
-    0b0000011111100000,
-];
-
-// 16x16 雲アイコン
-const ICON_CLOUD: [u16; 16] = [
-    0b0000000000000000,
-    0b0000000000000000,
-    0b0000011110000000,
-    0b0000111111000000,
-    0b0001111111100000,
-    0b0011111111110000,
-    0b0111111111111000,
-    0b1111111111111100,
-    0b1111111111111100,
-    0b0111111111111000,
-    0b0000000000000000,
-    0b0000000000000000,
-    0b0000000000000000,
-    0b0000000000000000,
-    0b0000000000000000,
-    0b0000000000000000,
-];
-
-// 16x16 雨アイコン（雲+雨滴）
-const ICON_RAIN: [u16; 16] = [
-    0b0000000000000000,
-    0b0000011110000000,
-    0b0000111111000000,
-    0b0001111111100000,
-    0b0011111111110000,
-    0b0111111111111000,
-    0b1111111111111100,
-    0b1111111111111100,
-    0b0111111111111000,
-    0b0000000000000000,
-    0b0010010010010000,
-    0b0010010010010000,
-    0b0100100100100000,
-    0b0000000000000000,
-    0b0000000000000000,
-    0b0000000000000000,
-];
-
-// 16x16 雪アイコン（雲+雪）
-const ICON_SNOW: [u16; 16] = [
-    0b0000000000000000,
-    0b0000011110000000,
-    0b0000111111000000,
-    0b0001111111100000,
-    0b0011111111110000,
-    0b0111111111111000,
-    0b1111111111111100,
-    0b1111111111111100,
-    0b0111111111111000,
-    0b0000000000000000,
-    0b0010001000100000,
-    0b0000100010000000,
-    0b0010001000100000,
-    0b0000100010000000,
-    0b0000000000000000,
-    0b0000000000000000,
-];
-
-// 16x16 雷アイコン
-const ICON_THUNDER: [u16; 16] = [
-    0b0000000000000000,
-    0b0000011110000000,
-    0b0000111111000000,
-    0b0001111111100000,
-    0b0011111111110000,
-    0b0111111111111000,
-    0b1111111111111100,
-    0b1111111111111100,
-    0b0111111111111000,
-    0b0000011100000000,
-    0b0000111000000000,
-    0b0001111110000000,
-    0b0000011100000000,
-    0b0000111000000000,
-    0b0000110000000000,
-    0b0000000000000000,
-];
+// PNG アイコンデータ（コンパイル時に埋め込み）
+const ICON_SUN_PNG: &[u8] = include_bytes!("../assets/icons/sun.png");
+const ICON_MOON_PNG: &[u8] = include_bytes!("../assets/icons/moon.png");
+const ICON_CLOUD_PNG: &[u8] = include_bytes!("../assets/icons/cloud.png");
+const ICON_RAIN_PNG: &[u8] = include_bytes!("../assets/icons/rain.png");
+const ICON_HEAVY_RAIN_PNG: &[u8] = include_bytes!("../assets/icons/heavy_rain.png");
+const ICON_SNOW_PNG: &[u8] = include_bytes!("../assets/icons/snow.png");
+const ICON_THUNDER_PNG: &[u8] = include_bytes!("../assets/icons/thunder.png");
 
 fn draw_pixel(fb: &mut FrameBuffer, x: i32, y: i32, size: i32, color: Rgb888) {
     Rectangle::new(Point::new(x, y), Size::new(size as u32, size as u32))
@@ -282,27 +180,36 @@ fn draw_pixel(fb: &mut FrameBuffer, x: i32, y: i32, size: i32, color: Rgb888) {
         .unwrap();
 }
 
-pub fn draw_weather_icon(fb: &mut FrameBuffer, icon: WeatherIconType, x: i32, y: i32, scale: i32) {
-    let (bitmap, color) = match icon {
-        WeatherIconType::Sun => (&ICON_SUN, Rgb888::new(255, 200, 50)),
-        WeatherIconType::Moon => (&ICON_MOON, Rgb888::new(200, 200, 150)),
-        WeatherIconType::Cloud => (&ICON_CLOUD, Rgb888::new(180, 180, 180)),
-        WeatherIconType::Rain => (&ICON_RAIN, Rgb888::new(100, 150, 200)),
-        WeatherIconType::Snow => (&ICON_SNOW, Rgb888::new(200, 220, 255)),
-        WeatherIconType::Thunder => (&ICON_THUNDER, Rgb888::new(255, 255, 100)),
-    };
+fn draw_png_icon(fb: &mut FrameBuffer, png_data: &[u8], x: i32, y: i32, scale: i32) {
+    use image::GenericImageView;
 
-    for (row, &bits) in bitmap.iter().enumerate() {
-        for col in 0..16 {
-            if (bits >> (15 - col)) & 1 == 1 {
-                draw_pixel(
-                    fb,
-                    x + (col as i32) * scale,
-                    y + (row as i32) * scale,
-                    scale,
-                    color,
-                );
-            }
+    let img = image::load_from_memory(png_data).expect("Failed to load PNG icon");
+
+    for (px, py, pixel) in img.pixels() {
+        let [r, g, b, a] = pixel.0;
+        // 透明度が128以上のピクセルのみ描画
+        if a > 128 {
+            draw_pixel(
+                fb,
+                x + (px as i32) * scale,
+                y + (py as i32) * scale,
+                scale,
+                Rgb888::new(r, g, b),
+            );
         }
     }
+}
+
+pub fn draw_weather_icon(fb: &mut FrameBuffer, icon: WeatherIconType, x: i32, y: i32, scale: i32) {
+    let png_data = match icon {
+        WeatherIconType::Sun => ICON_SUN_PNG,
+        WeatherIconType::Moon => ICON_MOON_PNG,
+        WeatherIconType::Cloud => ICON_CLOUD_PNG,
+        WeatherIconType::Rain => ICON_RAIN_PNG,
+        WeatherIconType::HeavyRain => ICON_HEAVY_RAIN_PNG,
+        WeatherIconType::Snow => ICON_SNOW_PNG,
+        WeatherIconType::Thunder => ICON_THUNDER_PNG,
+    };
+
+    draw_png_icon(fb, png_data, x, y, scale);
 }

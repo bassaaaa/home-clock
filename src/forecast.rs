@@ -60,7 +60,13 @@ fn draw_forecast_item(fb: &mut FrameBuffer, hour: &Hour, center_x: i32, y: i32) 
     let rain = hour.chance_of_rain;
 
     // 降水確率の幅を計算（数字 + %記号）
-    let rain_digits = if rain >= 100 { 3 } else if rain >= 10 { 2 } else { 1 };
+    let rain_digits = if rain >= 100 {
+        3
+    } else if rain >= 10 {
+        2
+    } else {
+        1
+    };
     let percent_width = digit_width; // P文字の幅
     let rain_width = digit_width * rain_digits + spacing * rain_digits + percent_width;
     let rain_x = center_x - rain_width / 2;
@@ -85,7 +91,7 @@ fn draw_forecast_item(fb: &mut FrameBuffer, hour: &Hour, center_x: i32, y: i32) 
 
     // % 記号（Pで代用）
     draw_digit(fb, 0, rx, rain_y, pixel_size, Rgb888::new(0, 0, 0)); // 消す
-    // %を描画（簡易的に小さく）
+                                                                     // %を描画（簡易的に小さく）
     draw_percent(fb, rx, rain_y, pixel_size, rain_color);
 }
 

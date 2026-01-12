@@ -37,7 +37,14 @@ pub fn draw_date(fb: &mut FrameBuffer, year: u16, month: u8, day: u8, weekday: W
     let mut x = start_x;
 
     // 年 (4桁)
-    draw_digit(fb, ((year / 1000) % 10) as u8, x, start_y, pixel_size, color);
+    draw_digit(
+        fb,
+        ((year / 1000) % 10) as u8,
+        x,
+        start_y,
+        pixel_size,
+        color,
+    );
     x += digit_width + spacing;
     draw_digit(fb, ((year / 100) % 10) as u8, x, start_y, pixel_size, color);
     x += digit_width + spacing;
