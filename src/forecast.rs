@@ -59,7 +59,8 @@ fn draw_forecast_item(fb: &mut FrameBuffer, hour: &Hour, center_x: i32, y: i32) 
 
     let rain = hour.chance_of_rain;
 
-    // 降水確率の幅を計算（数字 + %記号）
+    // 降水確率の幅を計算（数字 + spacing + %記号）
+    // 時間表示と同じ形式: 要素N個の間にspacing (N-1)個 → 要素間すべてにspacing
     let rain_digits = if rain >= 100 {
         3
     } else if rain >= 10 {
@@ -67,8 +68,8 @@ fn draw_forecast_item(fb: &mut FrameBuffer, hour: &Hour, center_x: i32, y: i32) 
     } else {
         1
     };
-    let percent_width = digit_width; // P文字の幅
-    let rain_width = digit_width * rain_digits + spacing * rain_digits + percent_width;
+    let percent_width = digit_width; // %記号の幅
+    let rain_width = digit_width * rain_digits + percent_width + spacing * rain_digits;
     let rain_x = center_x - rain_width / 2;
 
     let mut rx = rain_x;
@@ -78,46 +79,44 @@ fn draw_forecast_item(fb: &mut FrameBuffer, hour: &Hour, center_x: i32, y: i32) 
         draw_digit(fb, 0, rx, rain_y, pixel_size, rain_color);
         rx += digit_width + spacing;
         draw_digit(fb, 0, rx, rain_y, pixel_size, rain_color);
-        rx += digit_width + spacing;
+        rx += digit_width;
     } else if rain >= 10 {
         draw_digit(fb, rain / 10, rx, rain_y, pixel_size, rain_color);
         rx += digit_width + spacing;
         draw_digit(fb, rain % 10, rx, rain_y, pixel_size, rain_color);
-        rx += digit_width + spacing;
+        rx += digit_width;
     } else {
         draw_digit(fb, rain, rx, rain_y, pixel_size, rain_color);
-        rx += digit_width + spacing;
+        rx += digit_width;
     }
 
-    // % 記号（Pで代用）
-    draw_digit(fb, 0, rx, rain_y, pixel_size, Rgb888::new(0, 0, 0)); // 消す
-                                                                     // %を描画（簡易的に小さく）
+    // % 記号（数字と同じ高さ、spacingを挟む）
+    rx += pixel_size * 2;
     draw_percent(fb, rx, rain_y, pixel_size, rain_color);
 }
 
-// %記号を描画
+// %記号を描画（数字と同じサイズ: 幅8 x 高さ12）
 fn draw_percent(fb: &mut FrameBuffer, x: i32, y: i32, pixel_size: i32, color: Rgb888) {
     use embedded_graphics::{
         prelude::*,
         primitives::{PrimitiveStyle, Rectangle},
     };
 
-    // 簡易的な%表示
     let ps = pixel_size;
 
-    // 上の丸
+    // 上の丸 (3x3, 行0-2, 列0-2)
     Rectangle::new(
         Point::new(x, y),
-        embedded_graphics::geometry::Size::new(ps as u32 * 2, ps as u32 * 2),
+        embedded_graphics::geometry::Size::new(ps as u32 * 3, ps as u32 * 3),
     )
     .into_styled(PrimitiveStyle::with_fill(color))
     .draw(fb)
     .unwrap();
 
-    // 斜線
-    for i in 0..5 {
+    // 斜線 (行2-9, 列6から列1へ、右上から左下へ)
+    for i in 0..8 {
         Rectangle::new(
-            Point::new(x + (4 - i) * ps, y + (i + 1) * ps),
+            Point::new(x + (6 - i) * ps, y + (i + 2) * ps),
             embedded_graphics::geometry::Size::new(ps as u32, ps as u32),
         )
         .into_styled(PrimitiveStyle::with_fill(color))
@@ -125,10 +124,10 @@ fn draw_percent(fb: &mut FrameBuffer, x: i32, y: i32, pixel_size: i32, color: Rg
         .unwrap();
     }
 
-    // 下の丸
+    // 下の丸 (3x3, 行9-11, 列5-7)
     Rectangle::new(
-        Point::new(x + ps * 3, y + ps * 5),
-        embedded_graphics::geometry::Size::new(ps as u32 * 2, ps as u32 * 2),
+        Point::new(x + ps * 5, y + ps * 9),
+        embedded_graphics::geometry::Size::new(ps as u32 * 3, ps as u32 * 3),
     )
     .into_styled(PrimitiveStyle::with_fill(color))
     .draw(fb)
