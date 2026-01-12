@@ -1,97 +1,75 @@
-use chrono::prelude::*;
-use eframe::egui;
-use std::time::Duration;
-use tokio::sync::mpsc;
-use weather::*;
-
+mod clock;
+mod font;
+mod forecast;
+mod framebuffer;
 mod weather;
 
-struct MyApp {
-    localtime: DateTime<Local>,
-    weather: Option<Weather>,
-    weather_receiver: mpsc::Receiver<Weather>,
-}
+use chrono::{Datelike, Local};
+use minifb::{Key, Window, WindowOptions};
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
-impl MyApp {
-    fn new(egui_context: &egui::Context) -> Self {
-        // 天気データを送受信するためのチャネルを作成
-        // 1 はバッファサイズ（1つだけ保持できる）
-        let (weather_sender, weather_receiver) = mpsc::channel(1);
-        let ctx = egui_context.clone();
+use clock::{draw_date, draw_time};
+use forecast::draw_forecast;
+use framebuffer::FrameBuffer;
+use weather::{get_weather, Weather};
 
-        // バックグラウンドタスクで定期的に天気を取得
-        tokio::spawn(async move {
-            loop {
-                // 天気を取得
-                match get_weather().await {
-                    Ok(weather) => {
-                        // メインスレッドに送信
-                        let _ = weather_sender.send(weather).await;
-                        // 画面を再描画するよう通知
-                        ctx.request_repaint();
-                    }
-                    Err(error) => {
-                        eprintln!("天気の取得に失敗しました: {}", error);
-                    }
+const WINDOW_WIDTH: usize = 800;
+const WINDOW_HEIGHT: usize = 480;
+const BG_COLOR: u32 = 0x001020;
+
+fn main() {
+    let rt = tokio::runtime::Runtime::new().unwrap();
+
+    let mut fb = FrameBuffer::new(WINDOW_WIDTH, WINDOW_HEIGHT);
+    let mut window = Window::new("Home Clock", WINDOW_WIDTH, WINDOW_HEIGHT, WindowOptions::default())
+        .expect("ウィンドウの作成に失敗しました");
+
+    window.set_target_fps(30);
+
+    // 天気データを保持
+    let weather_data: Arc<Mutex<Option<Weather>>> = Arc::new(Mutex::new(None));
+    let mut last_weather_fetch = Instant::now() - Duration::from_secs(600);
+
+    while window.is_open() && !window.is_key_down(Key::Escape) {
+        // 10分ごとに天気を取得
+        if last_weather_fetch.elapsed() > Duration::from_secs(600) {
+            let weather_clone = Arc::clone(&weather_data);
+            rt.spawn(async move {
+                if let Ok(weather) = get_weather().await {
+                    let mut data = weather_clone.lock().unwrap();
+                    *data = Some(weather);
                 }
-                // 10分間待機
-                tokio::time::sleep(Duration::from_secs(600)).await;
+            });
+            last_weather_fetch = Instant::now();
+        }
+
+        fb.clear(BG_COLOR);
+
+        let now = Local::now();
+        let hour = now.format("%H").to_string().parse::<u8>().unwrap();
+        let minute = now.format("%M").to_string().parse::<u8>().unwrap();
+        let year = now.year() as u16;
+        let month = now.month() as u8;
+        let day = now.day() as u8;
+        let weekday = now.weekday();
+
+        let blink = now.timestamp_subsec_millis() < 500;
+
+        draw_date(&mut fb, year, month, day, weekday);
+        draw_time(&mut fb, hour, minute, blink);
+
+        // 予報を描画
+        if let Ok(data) = weather_data.lock() {
+            if let Some(ref weather) = *data {
+                draw_forecast(&mut fb, &weather.forecast);
             }
-        });
-
-        Self {
-            localtime: Local::now(),
-            weather: None,
-            weather_receiver,
-        }
-    }
-}
-
-impl eframe::App for MyApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // バックグラウンドタスクから天気データを受け取る
-        if let Ok(weather) = self.weather_receiver.try_recv() {
-            self.weather = Some(weather);
         }
 
-        // localtimeを更新
-        self.localtime = Local::now();
+        window
+            .update_with_buffer(&fb.buffer, fb.width, fb.height)
+            .expect("バッファの更新に失敗しました");
 
-        // 次の分の開始時刻まで待つ
-        let seconds_until_next_minute = 60 - self.localtime.second();
-        let wait_time = if seconds_until_next_minute == 0 {
-            60 // ちょうど分の切り替わりの場合は60秒待つ
-        } else {
-            seconds_until_next_minute
-        };
-
-        // 再描画
-        ctx.request_repaint_after(std::time::Duration::from_secs(wait_time as u64));
-
-        let date_str = self.localtime.format("%Y.%m.%d %a").to_string();
-        let time_str = self.localtime.format("%H:%M").to_string();
-
-        egui::CentralPanel::default().show(ctx, |ui| {
-            ui.vertical_centered(|ui| {
-                ui.add_space(60.0);
-                ui.heading(egui::RichText::new(date_str).size(50.0));
-                ui.heading(egui::RichText::new(time_str).size(250.0));
-            })
-        });
+        std::thread::sleep(Duration::from_millis(16));
     }
-}
-
-#[tokio::main]
-async fn main() {
-    let native_options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default()
-            .with_title("Home Clock")
-            .with_inner_size([800.0, 480.0]),
-        ..Default::default()
-    };
-    let _ = eframe::run_native(
-        "Clock",
-        native_options,
-        Box::new(|cc| Ok(Box::new(MyApp::new(&cc.egui_ctx)))),
-    );
 }
